@@ -29,7 +29,7 @@ bl_info = \
         "author" : "Lawrence D'Oliveiro <ldo@geek-central.gen.nz>",
         "version" : (0, 1, 0),
         "blender" : (2, 6, 1),
-        "location" : "Properties > Material",
+        "location" : "View3D > Add > External Materials > Load Palette...",
         "description" :
             "loads colours from a Gimp .gpl file into a set of swatch objects",
         "warning" : "",
@@ -112,7 +112,7 @@ def ImportPalette(PaletteFileName, SceneName, Specular) :
 #end ImportPalette
 
 class LoadPalette(bpy.types.Operator) :
-    bl_idname = "object.load_gimp_palette"
+    bl_idname = "material.load_gimp_palette"
     bl_label = "Load Gimp Palette"
     # bl_context = "object"
     # bl_options = set()
@@ -124,11 +124,13 @@ class LoadPalette(bpy.types.Operator) :
     specular = bpy.props.BoolProperty(name = "Specular")
 
     def invoke(self, context, event):
+        sys.stderr.write("invoke\n") # debug
         context.window_manager.fileselect_add(self)
         return {"RUNNING_MODAL"}
     #end invoke
 
     def execute(self, context):
+        sys.stderr.write("execute\n") # debug
         try :
             ImportPalette(self.filepath, self.scene_name, self.specular)
             Status = {"FINISHED"}
@@ -142,18 +144,27 @@ class LoadPalette(bpy.types.Operator) :
 
 #end LoadPalette
 
-def add_invoke_button(self, context) :
-    TheRow = self.layout.row(align = True) # gives a nicer grouping of my items
-    TheRow.operator(LoadPalette.bl_idname, text = "Load Palette...")
-#end add_invoke_button
+class LoaderMenu(bpy.types.Menu) :
+    bl_idname = "material.load_ext_materials"
+    bl_label = "External Materials"
+
+    def draw(self, context) :
+        self.layout.operator(LoadPalette.bl_idname, text = "Load Palette...", icon = "COLOR")
+    #end draw
+
+#end LoaderMenu
+
+def add_invoke_item(self, context) :
+    self.layout.menu(LoaderMenu.bl_idname, icon = "MATERIAL")
+#end add_invoke_item
 
 def register() :
     bpy.utils.register_module(__name__)
-    bpy.types.MATERIAL_PT_context_material.append(add_invoke_button)
+    bpy.types.INFO_MT_add.append(add_invoke_item)
 #end register
 
 def unregister() :
-    bpy.types.MATERIAL_PT_context_material.remove(add_invoke_button)
+    bpy.types.INFO_MT_add.remove(add_invoke_item)
     bpy.utils.unregister_module(__name__)
 #end unregister
 

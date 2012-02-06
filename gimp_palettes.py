@@ -92,15 +92,22 @@ def ImportPalette(PaletteFileName, SceneName, DiffuseIntensity, SpecularIntensit
     bpy.ops.scene.new(type = "NEW")
     TheScene = bpy.context.scene
     TheScene.name = SceneName
-    Y = 0.0
+    XOffset, YOffset = 2.2, 2.2 # nice margins assuming default mesh size of 2x2 units
+    PerRow = math.ceil(math.sqrt(len(Colors)))
+    Row = 0
+    Col = 0
     for Color in Colors :
         bpy.ops.object.select_all(action = "DESELECT") # ensure materials get added to right objects
         bpy.ops.mesh.primitive_plane_add \
           (
             layers = (True,) + 19 * (False,),
-            location = mathutils.Vector((0.0, Y, 0.0))
+            location = mathutils.Vector((Row * XOffset, Col * YOffset, 0.0))
           )
-        Y += 2.0
+        Col += 1
+        if Col == PerRow :
+            Col = 0
+            Row += 1
+        #end if
         Swatch = bpy.context.selected_objects[0]
         Material = bpy.data.materials.new("%s_%s" % (Name, Color[1]))
         Swatch.data.materials.append(Material)
@@ -120,7 +127,7 @@ class LoadPalette(bpy.types.Operator) :
     # underscores not allowed in filename/filepath property attrib names!
     # filename = bpy.props.StringProperty(subtype = "FILENAME")
     filepath = bpy.props.StringProperty(subtype = "FILE_PATH")
-    scene_name = bpy.props.StringProperty(name = "New Scene Name")
+    scene_name = bpy.props.StringProperty(name = "New Scene Name", default = "Swatches")
     diffuse_intensity = bpy.props.FloatProperty(name = "Diffuse Intensity", min = 0.0, max = 1.0, default = 1.0)
     specular_intensity = bpy.props.FloatProperty(name = "Specular Intensity", min = 0.0, max = 1.0, default = 0.0)
 

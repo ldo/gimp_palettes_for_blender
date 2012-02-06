@@ -46,7 +46,7 @@ class Failure(Exception) :
 
 #end Failure
 
-def ImportPalette(PaletteFileName, SceneName, Specular) :
+def ImportPalette(PaletteFileName, SceneName, DiffuseIntensity, SpecularIntensity) :
     try :
         PaletteFile = open(PaletteFileName, "r")
     except IOError as Why :
@@ -104,8 +104,8 @@ def ImportPalette(PaletteFileName, SceneName, Specular) :
         Swatch = bpy.context.selected_objects[0]
         Material = bpy.data.materials.new("%s_%s" % (Name, Color[1]))
         Swatch.data.materials.append(Material)
-        Material.specular_intensity = 1.0 * int(Specular)
-        Material.diffuse_intensity = 1.0 - Material.specular_intensity
+        Material.diffuse_intensity = DiffuseIntensity
+        Material.specular_intensity = SpecularIntensity
         Material.diffuse_color = Color[0]
         Material.specular_color = Material.diffuse_color
     #end for
@@ -121,18 +121,17 @@ class LoadPalette(bpy.types.Operator) :
     # filename = bpy.props.StringProperty(subtype = "FILENAME")
     filepath = bpy.props.StringProperty(subtype = "FILE_PATH")
     scene_name = bpy.props.StringProperty(name = "New Scene Name")
-    specular = bpy.props.BoolProperty(name = "Specular")
+    diffuse_intensity = bpy.props.FloatProperty(name = "Diffuse Intensity", min = 0.0, max = 1.0, default = 1.0)
+    specular_intensity = bpy.props.FloatProperty(name = "Specular Intensity", min = 0.0, max = 1.0, default = 0.0)
 
     def invoke(self, context, event):
-        sys.stderr.write("invoke\n") # debug
         context.window_manager.fileselect_add(self)
         return {"RUNNING_MODAL"}
     #end invoke
 
     def execute(self, context):
-        sys.stderr.write("execute\n") # debug
         try :
-            ImportPalette(self.filepath, self.scene_name, self.specular)
+            ImportPalette(self.filepath, self.scene_name, self.diffuse_intensity, self.specular_intensity)
             Status = {"FINISHED"}
         except Failure as Why :
             sys.stderr.write("Failure: %s\n" % Why.Msg) # debug
@@ -156,6 +155,8 @@ class LoaderMenu(bpy.types.Menu) :
 
 def add_invoke_item(self, context) :
     self.layout.menu(LoaderMenu.bl_idname, icon = "MATERIAL")
+      # note that trying to directly add item to self.layout instead of submenu
+      # doesn't work: its execute method gets run instead of invoke.
 #end add_invoke_item
 
 def register() :

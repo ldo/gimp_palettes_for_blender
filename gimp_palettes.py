@@ -28,7 +28,7 @@ bl_info = \
     {
         "name" : "Gimp Palettes",
         "author" : "Lawrence D'Oliveiro <ldo@geek-central.gen.nz>",
-        "version" : (0, 1, 0),
+        "version" : (0, 2, 0),
         "blender" : (2, 6, 1),
         "location" : "View3D > Add > External Materials > Load Palette...",
         "description" :
@@ -47,9 +47,14 @@ class Failure(Exception) :
 
 #end Failure
 
-def ImportPalette(PaletteFileName, SceneName, DiffuseIntensity, SpecularIntensity) :
+# Empty string as identifier for an enum item results in item
+# appearing as disabled, which is why I use a single space instead
+NoObject = " "
+NoMaterial = " "
+
+def ImportPalette(parms) :
     try :
-        PaletteFile = open(PaletteFileName, "r")
+        PaletteFile = open(parms.filepath, "r")
     except IOError as Why :
         raise Failure(str(Why))
     #end try
@@ -92,32 +97,100 @@ def ImportPalette(PaletteFileName, SceneName, DiffuseIntensity, SpecularIntensit
     bpy.ops.object.select_all(action = "DESELECT")
     bpy.ops.scene.new(type = "NEW")
     TheScene = bpy.context.scene
-    TheScene.name = SceneName
-    XOffset, YOffset = 2.2, 2.2 # nice margins assuming default mesh size of 2x2 units
+    TheScene.name = parms.scene_name
+    if parms.base_object != NoObject and parms.base_object in bpy.data.objects :
+        SwatchObject = bpy.data.objects[parms.base_object]
+    else :
+        SwatchObject = None
+    #end if
+    if SwatchObject != None :
+        SwatchMaterial = bpy.data.materials[parms.base_material]
+        XOffset, YOffset = tuple(x * 1.1 for x in tuple(SwatchObject.dimensions.xy))
+    else :
+        SwatchMaterial = None
+        XOffset, YOffset = 2.2, 2.2 # nice margins assuming default mesh size of 2x2 units
+    #end if
     PerRow = math.ceil(math.sqrt(len(Colors)))
     Row = 0
     Col = 0
+    Layers = (True,) + 19 * (False,)
     for Color in Colors :
         bpy.ops.object.select_all(action = "DESELECT") # ensure materials get added to right objects
-        bpy.ops.mesh.primitive_plane_add \
-          (
-            layers = (True,) + 19 * (False,),
-            location = mathutils.Vector((Row * XOffset, Col * YOffset, 0.0))
-          )
+        Location = mathutils.Vector((Row * XOffset, Col * YOffset, 0.0))
+        if SwatchObject != None :
+            Swatch = SwatchObject.copy()
+            Swatch.data = Swatch.data.copy() # ensure material slots are not shared
+            TheScene.objects.link(Swatch)
+            Swatch.layers = Layers
+            Swatch.location = Location
+        else :
+            bpy.ops.mesh.primitive_plane_add \
+              (
+                layers = Layers,
+                location = Location
+              )
+            Swatch = bpy.context.selected_objects[0]
+        #end if
         Col += 1
         if Col == PerRow :
             Col = 0
             Row += 1
         #end if
-        Swatch = bpy.context.selected_objects[0]
-        Material = bpy.data.materials.new("%s_%s" % (Name, Color[1]))
-        Swatch.data.materials.append(Material)
-        Material.diffuse_intensity = DiffuseIntensity
-        Material.specular_intensity = SpecularIntensity
+        MaterialName = "%s_%s" % (Name, Color[1])
+        if SwatchMaterial != None :
+            Material = SwatchMaterial.copy()
+            for i in range(0, len(Swatch.data.materials)) :
+                if Swatch.data.materials[i] == SwatchMaterial :
+                    Swatch.data.materials[i] = Material
+                    Swatch.active_material_index = i
+                #end if
+            #end for
+            Material.name = MaterialName
+        else :
+            Material = bpy.data.materials.new(MaterialName)
+            Swatch.data.materials.append(Material)
+        #end if
+        Material.diffuse_intensity = parms.diffuse_intensity
+        Material.specular_intensity = parms.specular_intensity
         Material.diffuse_color = Color[0]
         Material.specular_color = Material.diffuse_color
     #end for
 #end ImportPalette
+
+def ListObjects(self, context) :
+    return \
+        (
+            (
+                (NoObject, "<Default Simple Plane>", ""),
+            )
+        +
+            tuple
+              (
+                (o.name, o.name, "")
+                    for o in bpy.data.objects
+                    if o.type == "MESH" and len(o.data.materials) != 0
+              )
+        )
+#end ListObjects
+
+def ListObjectMaterials(self, context) :
+    TheObjectName = self.base_object
+    if TheObjectName != NoObject and TheObjectName in bpy.data.objects :
+        TheObject = bpy.data.objects[TheObjectName]
+        Result = tuple \
+          (
+            (m.name, m.name, "") for m in TheObject.data.materials
+          )
+    else :
+        Result = ((NoMaterial, "<Default Material>", ""),)
+    #end if
+    return \
+        Result
+#end ListObjectMaterials
+
+def ObjectSelected(self, context) :
+    context.area.tag_redraw()
+#end ObjectSelected
 
 class LoadPalette(bpy.types.Operator) :
     bl_idname = "material.load_gimp_palette"
@@ -129,6 +202,19 @@ class LoadPalette(bpy.types.Operator) :
     # filename = bpy.props.StringProperty(subtype = "FILENAME")
     filepath = bpy.props.StringProperty(subtype = "FILE_PATH")
     scene_name = bpy.props.StringProperty(name = "New Scene Name", default = "Swatches")
+    base_object = bpy.props.EnumProperty \
+      (
+        items = ListObjects,
+        name = "Swatch Object",
+        description = "Object to duplicate to create swatches",
+        update = ObjectSelected
+      )
+    base_material = bpy.props.EnumProperty \
+      (
+        items = ListObjectMaterials,
+        name = "Swatch Material",
+        description = "Material in swatch object to show colour",
+      )
     diffuse_intensity = bpy.props.FloatProperty(name = "Diffuse Intensity", min = 0.0, max = 1.0, default = 1.0)
     specular_intensity = bpy.props.FloatProperty(name = "Specular Intensity", min = 0.0, max = 1.0, default = 0.0)
 
@@ -139,7 +225,7 @@ class LoadPalette(bpy.types.Operator) :
 
     def execute(self, context):
         try :
-            ImportPalette(self.filepath, self.scene_name, self.diffuse_intensity, self.specular_intensity)
+            ImportPalette(self)
             Status = {"FINISHED"}
         except Failure as Why :
             sys.stderr.write("Failure: %s\n" % Why.Msg) # debug

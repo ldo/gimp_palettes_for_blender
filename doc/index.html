@@ -42,9 +42,9 @@ a
 </HEAD>
 <BODY STYLE="background-color : #F4F4F0">
 
-<DIV CLASS="h1">Gimp Palettes for Blender 0.2.0 User Guide<BR>
+<DIV CLASS="h1">Gimp Palettes for Blender 0.3.0 User Guide<BR>
 <A HREF="mailto:&quot;Lawrence D'Oliveiro&quot; &lt;ldo@geek-central.gen.nz&gt;">Lawrence D&#8217;Oliveiro</A><BR>
-2012 February 7</DIV>
+2012 February 8</DIV>
 <DIV STYLE="position : fixed; height : auto; width : 20%; top : 1em; right : 1em; left : auto; background-color : #E8E8E0">Table of Contents
 <OL>
 <LI><A HREF="#Introduction">Introduction</A>
@@ -53,7 +53,7 @@ a
 <LI><A HREF="#NewScene">What Happened To My Model?</A>
 <LI><A HREF="#UsingColours">Now That I Have Some Colours Loaded, How Do I Use Them?</A>
 <LI><A HREF="#Unneeded">Getting Rid Of Unneeded Stuff</A>
-<LI><A HREF="#SpecularMaterials">Specular Versus Diffuse Materials</A>
+<LI><A HREF="#AdvancedMaterials">Specular Versus Diffuse Materials, Mirror &amp; SSS</A>
 <LI><A HREF="#CustomSwatchObjects">Custom Swatch Objects</A>
 </OL>
 </DIV>
@@ -62,9 +62,10 @@ a
 
 <DIV CLASS="h2"><A NAME="Introduction"></A>Introduction</DIV>
 <P>Gimp Palettes is an addon for <A HREF="http://www.blender.org/">Blender</A> 2.61 to
-allow easy use of colours from Gimp palette (.gpl) files. Material definitions in a 3D
-package like Blender are much more complex than a mere colour specification; nevertheless,
-this addon can be useful for making use of standardized colours for materials.
+allow easy use of colours from <A HREF="http://www.gimp.org/">Gimp</A> palette (.gpl) files.
+Material definitions in a 3D package like Blender are much more complex than a mere colour
+specification; nevertheless, this addon can be useful for making use of standardized colours
+for materials.
 
 <DIV CLASS="h2"><A NAME="Installation"></A>Installation</DIV>
 <P>To install Gimp Palettes for Blender, launch Blender 2.61,  bring up the
@@ -125,25 +126,31 @@ object.
 the swatches, along with all the swatch objects in it. Then, when you save and reload
 the .blend file, all the unused materials will disappear.
 
-<DIV CLASS="h2"><A NAME="SpecularMaterials"></A>Specular Versus Diffuse Materials</DIV>
+<DIV CLASS="h2"><A NAME="AdvancedMaterials"></A>Specular Versus Diffuse Materials, Mirror &amp; SSS</DIV>
 <P>The default settings above load the colours as purely diffuse materials. But what if
 you want more specular (reflective) ones?
-<P>This is where the additional sliders in the file selector dialog come in. If you
-look at this again, you will see they are labelled &#8220;Diffuse Intensity&#8221; and
-&#8220;Specular Intensity&#8221;, with the first defaulting to 1.0 and the second to
-0.0. Simply adjust these to the desired mix before selecting a palette file to import,
+<P>This is where the additional checkboxes and sliders in the file selector dialog come in. If you
+look at this again, you will see checkboxes labelled &#8220;Use as Diffuse&#8221; (defaulting
+to true) and &#8221;Use as Specular&#8221; (defaulting to false), along with sliders labelled
+&#8220;Diffuse Intensity&#8221; and &#8220;Specular Intensity&#8221;, with the first defaulting
+to 0.8 and the second to 0.5. Simply check or uncheck the appropriate boxes and adjust the
+corresponding sliders to to the desired mix before selecting a palette file to import,
 and all the created materials will have the desired degrees of diffuse/specular intensity.
+
+<P>You can also use the palette to assign material colours for mirror (raytrace)
+and subsurface scattering. But these options are best applied with custom swatch objects
+(below).
 
 <DIV CLASS="h2"><A NAME="CustomSwatchObjects"></A>Custom Swatch Objects</DIV>
 
 <P>If you don&#8217;t like the colours to be shown as simple plane objects, you can
 create more elaborate displays, by defining a custom swatch object. This must be a mesh,
 and it must have at least one material already assigned. The object will be replicated
-once for each colour, and the chosen material will also be duplicated, and its diffuse
-and reflective colours set to the one from the palette entry. The rest of the material
-settings will be preserved, so you can set these up beforehand, for example specifying
-your choice of shader models, transparency/mirror etc&#8212;all the settings that Blender
-offers.
+once for each colour, and the chosen material will also be duplicated, and its appropriate
+colours (depending on your checkbox selections) set to the one from the palette entry.
+The rest of the material settings will be preserved, so you can set these up beforehand,
+for example specifying your choice of shader models, transparency/mirror etc&#8212;all
+the settings that Blender offers.
 
 <P>For example, here is a scaled cube mesh with two materials assigned, one called
 &#8220;Display&#8221; to the top face (to be replaced with the swatch colour)

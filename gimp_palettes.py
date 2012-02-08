@@ -28,7 +28,7 @@ bl_info = \
     {
         "name" : "Gimp Palettes",
         "author" : "Lawrence D'Oliveiro <ldo@geek-central.gen.nz>",
-        "version" : (0, 2, 0),
+        "version" : (0, 3, 0),
         "blender" : (2, 6, 1),
         "location" : "View3D > Add > External Materials > Load Palette...",
         "description" :
@@ -150,10 +150,21 @@ def ImportPalette(parms) :
             Material = bpy.data.materials.new(MaterialName)
             Swatch.data.materials.append(Material)
         #end if
-        Material.diffuse_intensity = parms.diffuse_intensity
-        Material.specular_intensity = parms.specular_intensity
-        Material.diffuse_color = Color[0]
-        Material.specular_color = Material.diffuse_color
+        if parms.use_as_diffuse :
+            Material.diffuse_intensity = parms.diffuse_intensity
+            Material.diffuse_color = Color[0]
+        #end if
+        if parms.use_as_specular :
+            Material.specular_intensity = parms.specular_intensity
+            Material.specular_color = Color[0]
+        #end if
+        if parms.use_as_mirror :
+            Material.raytrace_mirror.reflect_factor = parms.mirror_reflect
+            Material.mirror_color = Color[0]
+        #end if
+        if parms.use_as_sss :
+            Material.subsurface_scattering.color = Color[0]
+        #end if
     #end for
 #end ImportPalette
 
@@ -215,8 +226,54 @@ class LoadPalette(bpy.types.Operator) :
         name = "Swatch Material",
         description = "Material in swatch object to show colour",
       )
-    diffuse_intensity = bpy.props.FloatProperty(name = "Diffuse Intensity", min = 0.0, max = 1.0, default = 1.0)
-    specular_intensity = bpy.props.FloatProperty(name = "Specular Intensity", min = 0.0, max = 1.0, default = 0.0)
+    use_as_diffuse = bpy.props.BoolProperty \
+      (
+        name = "Use as Diffuse",
+        description = "Whether to apply as material diffuse colour",
+        default = True
+      )
+    diffuse_intensity = bpy.props.FloatProperty \
+      (
+        name = "Diffuse Intensity",
+        description = "material diffuse intensity, only if applying as diffuse colour",
+        min = 0.0,
+        max = 1.0,
+        default = 0.8
+      )
+    use_as_specular = bpy.props.BoolProperty \
+      (
+        name = "Use as Specular",
+        description = "Whether to apply as material specular colour",
+        default = False
+      )
+    specular_intensity = bpy.props.FloatProperty \
+      (
+        name = "Specular Intensity",
+        description = "material specular intensity, only if applying as specular colour",
+        min = 0.0,
+        max = 1.0,
+        default = 0.5
+      )
+    use_as_mirror = bpy.props.BoolProperty \
+      (
+        name = "Use for Mirror",
+        description = "Whether to apply as material raytrace mirror colour",
+        default = False
+      )
+    mirror_reflect = bpy.props.FloatProperty \
+      (
+        name = "Mirror Reflection Factor",
+        description = "Reflection factor, only if applying as raytrace mirror colour",
+        min = 0.0,
+        max = 1.0,
+        default = 0.8
+      )
+    use_as_sss = bpy.props.BoolProperty \
+      (
+        name = "Use for Subsurface Scattering",
+        description = "Whether to apply as material subsurface scattering colour",
+        default = False
+      )
 
     def invoke(self, context, event):
         context.window_manager.fileselect_add(self)

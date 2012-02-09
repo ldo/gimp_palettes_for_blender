@@ -28,7 +28,7 @@ bl_info = \
     {
         "name" : "Gimp Palettes",
         "author" : "Lawrence D'Oliveiro <ldo@geek-central.gen.nz>",
-        "version" : (0, 3, 0),
+        "version" : (0, 3, 1),
         "blender" : (2, 6, 1),
         "location" : "View3D > Add > External Materials > Load Palette...",
         "description" :
@@ -179,7 +179,12 @@ def ListObjects(self, context) :
               (
                 (o.name, o.name, "")
                     for o in bpy.data.objects
-                    if o.type == "MESH" and len(o.data.materials) != 0
+                    if
+                            o.type == "MESH"
+                        and
+                            len(o.data.materials) != 0
+                        and
+                            o.name.find(self.base_object_match) >= 0
               )
         )
 #end ListObjects
@@ -220,6 +225,7 @@ class LoadPalette(bpy.types.Operator) :
         description = "Object to duplicate to create swatches",
         update = ObjectSelected
       )
+    base_object_match = bpy.props.StringProperty(name = "Only Names Matching")
     base_material = bpy.props.EnumProperty \
       (
         items = ListObjectMaterials,

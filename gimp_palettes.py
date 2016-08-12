@@ -28,7 +28,7 @@ bl_info = \
     {
         "name" : "Gimp Palettes",
         "author" : "Lawrence D'Oliveiro <ldo@geek-central.gen.nz>",
-        "version" : (0, 3, 1),
+        "version" : (0, 3, 2),
         "blender" : (2, 6, 1),
         "location" : "View3D > Add > External Materials > Load Palette...",
         "description" :
@@ -41,42 +41,42 @@ bl_info = \
 
 class Failure(Exception) :
 
-    def __init__(self, Msg) :
-        self.Msg = Msg
+    def __init__(self, msg) :
+        self.msg = msg
     #end __init__
 
 #end Failure
 
 # Empty string as identifier for an enum item results in item
 # appearing as disabled, which is why I use a single space instead
-NoObject = " "
-NoMaterial = " "
+no_object = " "
+no_material = " "
 
-def ImportPalette(parms) :
+def import_palette(parms) :
     try :
-        PaletteFile = open(parms.filepath, "r")
-    except IOError as Why :
-        raise Failure(str(Why))
+        palette_file = open(parms.filepath, "r")
+    except IOError as why :
+        raise Failure(str(why))
     #end try
-    if PaletteFile.readline().strip() != "GIMP Palette" :
+    if palette_file.readline().strip() != "GIMP Palette" :
         raise Failure("doesn't look like a GIMP palette file")
     #end if
-    Name = "Untitled"
+    name = "Untitled"
     while True :
-        line = PaletteFile.readline()
+        line = palette_file.readline()
         if len(line) == 0 :
             raise Failure("palette file seems to be empty")
         #end if
         line = line.rstrip("\n")
         if line.startswith("Name: ") :
-            Name = line[6:].strip()
+            name = line[6:].strip()
         #end if
         if line.startswith("#") :
             break
     #end while
-    Colors = []
+    colours = []
     while True :
-        line = PaletteFile.readline()
+        line = palette_file.readline()
         if len(line) == 0 :
             break
         if not line.startswith("#") :
@@ -86,93 +86,93 @@ def ImportPalette(parms) :
                 components.append("") # empty name
             #end if
             try :
-                color = tuple(int(i.strip()) / 255.0 for i in components[0].split(None, 2))
+                colour = tuple(int(i.strip()) / 255.0 for i in components[0].split(None, 2))
             except ValueError :
                 raise Failure("bad colour on line %s" % repr(line))
             #end try
-            Colors.append((color, components[1]))
+            colours.append((colour, components[1]))
         #end if
     #end while
   # all successfully loaded
     bpy.ops.object.select_all(action = "DESELECT")
     bpy.ops.scene.new(type = "NEW")
-    TheScene = bpy.context.scene
-    TheScene.name = parms.scene_name
-    if parms.base_object != NoObject and parms.base_object in bpy.data.objects :
-        SwatchObject = bpy.data.objects[parms.base_object]
+    the_scene = bpy.context.scene
+    the_scene.name = parms.scene_name
+    if parms.base_object != no_object and parms.base_object in bpy.data.objects :
+        swatch_object = bpy.data.objects[parms.base_object]
     else :
-        SwatchObject = None
+        swatch_object = None
     #end if
-    if SwatchObject != None :
-        SwatchMaterial = bpy.data.materials[parms.base_material]
-        XOffset, YOffset = tuple(x * 1.1 for x in tuple(SwatchObject.dimensions.xy))
+    if swatch_object != None :
+        swatch_material = bpy.data.materials[parms.base_material]
+        x_offset, y_offset = tuple(x * 1.1 for x in tuple(swatch_object.dimensions.xy))
     else :
-        SwatchMaterial = None
-        XOffset, YOffset = 2.2, 2.2 # nice margins assuming default mesh size of 2x2 units
+        swatch_material = None
+        x_offset, y_offset = 2.2, 2.2 # nice margins assuming default mesh size of 2x2 units
     #end if
-    PerRow = math.ceil(math.sqrt(len(Colors)))
-    Row = 0
-    Col = 0
-    Layers = (True,) + 19 * (False,)
-    for Color in Colors :
+    per_row = math.ceil(math.sqrt(len(colours)))
+    row = 0
+    col = 0
+    layers = (True,) + 19 * (False,)
+    for colour in colours :
         bpy.ops.object.select_all(action = "DESELECT") # ensure materials get added to right objects
-        Location = mathutils.Vector((Row * XOffset, Col * YOffset, 0.0))
-        if SwatchObject != None :
-            Swatch = SwatchObject.copy()
-            Swatch.data = Swatch.data.copy() # ensure material slots are not shared
-            TheScene.objects.link(Swatch)
-            Swatch.layers = Layers
-            Swatch.location = Location
+        location = mathutils.Vector((row * x_offset, col * y_offset, 0.0))
+        if swatch_object != None :
+            swatch = swatch_object.copy()
+            swatch.data = swatch.data.copy() # ensure material slots are not shared
+            the_scene.objects.link(swatch)
+            swatch.layers = layers
+            swatch.location = location
         else :
             bpy.ops.mesh.primitive_plane_add \
               (
-                layers = Layers,
-                location = Location
+                layers = layers,
+                location = location
               )
-            Swatch = bpy.context.selected_objects[0]
+            swatch = bpy.context.selected_objects[0]
         #end if
-        Col += 1
-        if Col == PerRow :
-            Col = 0
-            Row += 1
+        col += 1
+        if col == per_row :
+            col = 0
+            row += 1
         #end if
-        MaterialName = "%s_%s" % (Name, Color[1])
-        if SwatchMaterial != None :
-            Material = SwatchMaterial.copy()
-            for i in range(0, len(Swatch.data.materials)) :
-                if Swatch.data.materials[i] == SwatchMaterial :
-                    Swatch.data.materials[i] = Material
-                    Swatch.active_material_index = i
+        material_name = "%s_%s" % (name, colour[1])
+        if swatch_material != None :
+            material = swatch_material.copy()
+            for i in range(0, len(swatch.data.materials)) :
+                if swatch.data.materials[i] == swatch_material :
+                    swatch.data.materials[i] = material
+                    swatch.active_material_index = i
                 #end if
             #end for
-            Material.name = MaterialName
+            material.name = material_name
         else :
-            Material = bpy.data.materials.new(MaterialName)
-            Swatch.data.materials.append(Material)
+            material = bpy.data.materials.new(material_name)
+            swatch.data.materials.append(material)
         #end if
         if parms.use_as_diffuse :
-            Material.diffuse_intensity = parms.diffuse_intensity
-            Material.diffuse_color = Color[0]
+            material.diffuse_intensity = parms.diffuse_intensity
+            material.diffuse_color = colour[0]
         #end if
         if parms.use_as_specular :
-            Material.specular_intensity = parms.specular_intensity
-            Material.specular_color = Color[0]
+            material.specular_intensity = parms.specular_intensity
+            material.specular_color = colour[0]
         #end if
         if parms.use_as_mirror :
-            Material.raytrace_mirror.reflect_factor = parms.mirror_reflect
-            Material.mirror_color = Color[0]
+            material.raytrace_mirror.reflect_factor = parms.mirror_reflect
+            material.mirror_color = colour[0]
         #end if
         if parms.use_as_sss :
-            Material.subsurface_scattering.color = Color[0]
+            material.subsurface_scattering.color = colour[0]
         #end if
     #end for
-#end ImportPalette
+#end import_palette
 
-def ListObjects(self, context) :
+def list_objects(self, context) :
     return \
         (
             (
-                (NoObject, "<Default Simple Plane>", ""),
+                (no_object, "<Default Simple Plane>", ""),
             )
         +
             tuple
@@ -187,26 +187,26 @@ def ListObjects(self, context) :
                             o.name.find(self.base_object_match) >= 0
               )
         )
-#end ListObjects
+#end list_objects
 
-def ListObjectMaterials(self, context) :
-    TheObjectName = self.base_object
-    if TheObjectName != NoObject and TheObjectName in bpy.data.objects :
-        TheObject = bpy.data.objects[TheObjectName]
-        Result = tuple \
+def list_object_materials(self, context) :
+    the_object_name = self.base_object
+    if the_object_name != no_object and the_object_name in bpy.data.objects :
+        the_object = bpy.data.objects[the_object_name]
+        result = tuple \
           (
-            (m.name, m.name, "") for m in TheObject.data.materials
+            (m.name, m.name, "") for m in the_object.data.materials
           )
     else :
-        Result = ((NoMaterial, "<Default Material>", ""),)
+        result = ((no_material, "<Default Material>", ""),)
     #end if
     return \
-        Result
-#end ListObjectMaterials
+        result
+#end list_object_materials
 
-def ObjectSelected(self, context) :
+def object_selected(self, context) :
     context.area.tag_redraw()
-#end ObjectSelected
+#end object_selected
 
 class LoadPalette(bpy.types.Operator) :
     bl_idname = "material.load_gimp_palette"
@@ -220,15 +220,15 @@ class LoadPalette(bpy.types.Operator) :
     scene_name = bpy.props.StringProperty(name = "New Scene Name", default = "Swatches")
     base_object = bpy.props.EnumProperty \
       (
-        items = ListObjects,
+        items = list_objects,
         name = "Swatch Object",
         description = "Object to duplicate to create swatches",
-        update = ObjectSelected
+        update = object_selected
       )
     base_object_match = bpy.props.StringProperty(name = "Only Names Matching")
     base_material = bpy.props.EnumProperty \
       (
-        items = ListObjectMaterials,
+        items = list_object_materials,
         name = "Swatch Material",
         description = "Material in swatch object to show colour",
       )
@@ -288,14 +288,14 @@ class LoadPalette(bpy.types.Operator) :
 
     def execute(self, context):
         try :
-            ImportPalette(self)
-            Status = {"FINISHED"}
-        except Failure as Why :
-            sys.stderr.write("Failure: %s\n" % Why.Msg) # debug
-            self.report({"ERROR"}, Why.Msg)
-            Status = {"CANCELLED"}
+            import_palette(self)
+            status = {"FINISHED"}
+        except Failure as why :
+            sys.stderr.write("Failure: %s\n" % why.msg) # debug
+            self.report({"ERROR"}, why.msg)
+            status = {"CANCELLED"}
         #end try
-        return Status
+        return status
     #end execute
 
 #end LoadPalette

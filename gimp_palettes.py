@@ -28,7 +28,7 @@ bl_info = \
     {
         "name" : "Gimp Palettes",
         "author" : "Lawrence D'Oliveiro <ldo@geek-central.gen.nz>",
-        "version" : (0, 3, 2),
+        "version" : (0, 3, 3),
         "blender" : (2, 6, 1),
         "location" : "View3D > Add > External Materials > Load Palette...",
         "description" :
@@ -94,10 +94,12 @@ def import_palette(parms) :
         #end if
     #end while
   # all successfully loaded
+    prev_scene = bpy.context.scene
     bpy.ops.object.select_all(action = "DESELECT")
     bpy.ops.scene.new(type = "NEW")
     the_scene = bpy.context.scene
     the_scene.name = parms.scene_name
+    the_scene.world = prev_scene.world
     if parms.base_object != no_object and parms.base_object in bpy.data.objects :
         swatch_object = bpy.data.objects[parms.base_object]
     else :

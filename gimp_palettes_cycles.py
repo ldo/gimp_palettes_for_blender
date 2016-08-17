@@ -118,9 +118,10 @@ def import_palette(parms) :
     # into something more elaborate.
     common_group = bpy.data.node_groups.new("palette material common", "ShaderNodeTree")
     group_inputs = common_group.nodes.new("NodeGroupInput")
-    group_inputs.location = (-350, 0)
+    group_inputs.location = (-300, 0)
     common_group.inputs.new("NodeSocketColor", "Colour")
     shader = common_group.nodes.new("ShaderNodeBsdfDiffuse")
+    shader.location = (0, 0)
     common_group.links.new(group_inputs.outputs[0], shader.inputs[0])
     # group will contain material output directly
     material_output = common_group.nodes.new("ShaderNodeOutputMaterial")
@@ -164,8 +165,9 @@ def import_palette(parms) :
         the_material.diffuse_color = colour[0] # used in viewport
         group_node = material_tree.nodes.new("ShaderNodeGroup")
         group_node.node_tree = common_group
+        group_node.location = (0, 0)
         in_colour = material_tree.nodes.new("ShaderNodeRGB")
-        in_colour.location = (-350, 0)
+        in_colour.location = (-300, 0)
         in_colour.outputs[0].default_value = colour[0] + (1,)
         material_tree.links.new(in_colour.outputs[0], group_node.inputs[0])
         if swatch_material != None :

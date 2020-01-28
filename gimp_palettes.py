@@ -151,7 +151,6 @@ def import_palette(parms) :
         #end if
         material_name = "%s_%s" % (name, colour[1])
         the_material = bpy.data.materials.new(material_name)
-          # TODO: option to reuse existing material?
         the_material.use_nodes = True
         material_tree = the_material.node_tree
         for node in list(material_tree.nodes) :

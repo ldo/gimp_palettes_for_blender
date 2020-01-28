@@ -1,11 +1,10 @@
 #+
-# This add-on script for Blender 2.6 loads a set of colours from
-# a Gimp .gpl file and creates a set of simple materials that use
-# them, assigned to swatch objects created in a separate scene
-# in the current document. From there they may be browsed and reused
-# in other objects as needed.
+# This add-on script for Blender 2.7 loads a set of colours from a Gimp .gpl
+# file and creates a set of simple Cycles materials that use them, assigned to
+# swatch objects created in a separate scene in the current document. From there
+# they may be browsed and reused in other objects as needed.
 #
-# Copyright 2012 Lawrence D'Oliveiro <ldo@geek-central.gen.nz>.
+# Copyright 2012-2016 Lawrence D'Oliveiro <ldo@geek-central.gen.nz>.
 #
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -26,10 +25,10 @@ import mathutils
 
 bl_info = \
     {
-        "name" : "Gimp Palettes",
+        "name" : "Gimp Palettes (Cycles version)",
         "author" : "Lawrence D'Oliveiro <ldo@geek-central.gen.nz>",
-        "version" : (0, 3, 3),
-        "blender" : (2, 6, 1),
+        "version" : (0, 4, 0),
+        "blender" : (2, 7, 7),
         "location" : "View3D > Add > External Materials > Load Palette...",
         "description" :
             "loads colours from a Gimp .gpl file into a set of swatch objects",
@@ -100,6 +99,7 @@ def import_palette(parms) :
     the_scene = bpy.context.scene
     the_scene.name = parms.scene_name
     the_scene.world = prev_scene.world
+    the_scene.render.engine = "CYCLES"
     if parms.base_object != no_object and parms.base_object in bpy.data.objects :
         swatch_object = bpy.data.objects[parms.base_object]
     else :
@@ -112,6 +112,21 @@ def import_palette(parms) :
         swatch_material = None
         x_offset, y_offset = 2.2, 2.2 # nice margins assuming default mesh size of 2x2 units
     #end if
+    # Create material with a node group containing a single diffuse shader
+    # and an input RGB colour. That way colour can be varied across
+    # each swatch, while contents of common node group can be easily changed by user
+    # into something more elaborate.
+    common_group = bpy.data.node_groups.new("palette material common", "ShaderNodeTree")
+    group_inputs = common_group.nodes.new("NodeGroupInput")
+    group_inputs.location = (-300, 0)
+    common_group.inputs.new("NodeSocketColor", "Colour")
+    shader = common_group.nodes.new("ShaderNodeBsdfDiffuse")
+    shader.location = (0, 0)
+    common_group.links.new(group_inputs.outputs[0], shader.inputs[0])
+    # group will contain material output directly
+    material_output = common_group.nodes.new("ShaderNodeOutputMaterial")
+    material_output.location = (300, 0)
+    common_group.links.new(shader.outputs[0], material_output.inputs[0])
     per_row = math.ceil(math.sqrt(len(colours)))
     row = 0
     col = 0
@@ -139,33 +154,31 @@ def import_palette(parms) :
             row += 1
         #end if
         material_name = "%s_%s" % (name, colour[1])
+        the_material = bpy.data.materials.new(material_name)
+          # TODO: option to reuse existing material?
+        the_material.use_nodes = True
+        material_tree = the_material.node_tree
+        for node in list(material_tree.nodes) :
+          # clear out default nodes
+            material_tree.nodes.remove(node)
+        #end for
+        the_material.diffuse_color = colour[0] # used in viewport
+        group_node = material_tree.nodes.new("ShaderNodeGroup")
+        group_node.node_tree = common_group
+        group_node.location = (0, 0)
+        in_colour = material_tree.nodes.new("ShaderNodeRGB")
+        in_colour.location = (-300, 0)
+        in_colour.outputs[0].default_value = colour[0] + (1,)
+        material_tree.links.new(in_colour.outputs[0], group_node.inputs[0])
         if swatch_material != None :
-            material = swatch_material.copy()
+            # replace existing material slot
             for i in range(0, len(swatch.data.materials)) :
                 if swatch.data.materials[i] == swatch_material :
-                    swatch.data.materials[i] = material
-                    swatch.active_material_index = i
+                    swatch.data.materials[i] = the_material
                 #end if
             #end for
-            material.name = material_name
         else :
-            material = bpy.data.materials.new(material_name)
-            swatch.data.materials.append(material)
-        #end if
-        if parms.use_as_diffuse :
-            material.diffuse_intensity = parms.diffuse_intensity
-            material.diffuse_color = colour[0]
-        #end if
-        if parms.use_as_specular :
-            material.specular_intensity = parms.specular_intensity
-            material.specular_color = colour[0]
-        #end if
-        if parms.use_as_mirror :
-            material.raytrace_mirror.reflect_factor = parms.mirror_reflect
-            material.mirror_color = colour[0]
-        #end if
-        if parms.use_as_sss :
-            material.subsurface_scattering.color = colour[0]
+            swatch.data.materials.append(the_material)
         #end if
     #end for
 #end import_palette
@@ -232,55 +245,7 @@ class LoadPalette(bpy.types.Operator) :
       (
         items = list_object_materials,
         name = "Swatch Material",
-        description = "Material in swatch object to show colour",
-      )
-    use_as_diffuse = bpy.props.BoolProperty \
-      (
-        name = "Use as Diffuse",
-        description = "Whether to apply as material diffuse colour",
-        default = True
-      )
-    diffuse_intensity = bpy.props.FloatProperty \
-      (
-        name = "Diffuse Intensity",
-        description = "material diffuse intensity, only if applying as diffuse colour",
-        min = 0.0,
-        max = 1.0,
-        default = 0.8
-      )
-    use_as_specular = bpy.props.BoolProperty \
-      (
-        name = "Use as Specular",
-        description = "Whether to apply as material specular colour",
-        default = False
-      )
-    specular_intensity = bpy.props.FloatProperty \
-      (
-        name = "Specular Intensity",
-        description = "material specular intensity, only if applying as specular colour",
-        min = 0.0,
-        max = 1.0,
-        default = 0.5
-      )
-    use_as_mirror = bpy.props.BoolProperty \
-      (
-        name = "Use for Mirror",
-        description = "Whether to apply as material raytrace mirror colour",
-        default = False
-      )
-    mirror_reflect = bpy.props.FloatProperty \
-      (
-        name = "Mirror Reflection Factor",
-        description = "Reflection factor, only if applying as raytrace mirror colour",
-        min = 0.0,
-        max = 1.0,
-        default = 0.8
-      )
-    use_as_sss = bpy.props.BoolProperty \
-      (
-        name = "Use for Subsurface Scattering",
-        description = "Whether to apply as material subsurface scattering colour",
-        default = False
+        description = "Material in swatch object to replace with colour",
       )
 
     def invoke(self, context, event):

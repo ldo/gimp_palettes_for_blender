@@ -135,7 +135,7 @@ def import_palette(parms) :
         if swatch_object != None :
             swatch = swatch_object.copy()
             swatch.data = swatch.data.copy() # ensure material slots are not shared
-            the_scene.objects.link(swatch)
+            the_scene.collection.objects.link(swatch)
             swatch.location = location
         else :
             bpy.ops.mesh.primitive_plane_add \

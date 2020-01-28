@@ -25,10 +25,10 @@ import mathutils
 
 bl_info = \
     {
-        "name" : "Gimp Palettes (Cycles version)",
+        "name" : "Gimp Palettes",
         "author" : "Lawrence D'Oliveiro <ldo@geek-central.gen.nz>",
-        "version" : (0, 4, 0),
-        "blender" : (2, 7, 7),
+        "version" : (0, 5, 0),
+        "blender" : (2, 81, 0),
         "location" : "View3D > Add > External Materials > Load Palette...",
         "description" :
             "loads colours from a Gimp .gpl file into a set of swatch objects",
@@ -99,7 +99,6 @@ def import_palette(parms) :
     the_scene = bpy.context.scene
     the_scene.name = parms.scene_name
     the_scene.world = prev_scene.world
-    the_scene.render.engine = "CYCLES"
     if parms.base_object != no_object and parms.base_object in bpy.data.objects :
         swatch_object = bpy.data.objects[parms.base_object]
     else :
@@ -130,7 +129,6 @@ def import_palette(parms) :
     per_row = math.ceil(math.sqrt(len(colours)))
     row = 0
     col = 0
-    layers = (True,) + 19 * (False,)
     for colour in colours :
         bpy.ops.object.select_all(action = "DESELECT") # ensure materials get added to right objects
         location = mathutils.Vector((row * x_offset, col * y_offset, 0.0))
@@ -138,12 +136,10 @@ def import_palette(parms) :
             swatch = swatch_object.copy()
             swatch.data = swatch.data.copy() # ensure material slots are not shared
             the_scene.objects.link(swatch)
-            swatch.layers = layers
             swatch.location = location
         else :
             bpy.ops.mesh.primitive_plane_add \
               (
-                layers = layers,
                 location = location
               )
             swatch = bpy.context.selected_objects[0]
@@ -162,7 +158,7 @@ def import_palette(parms) :
           # clear out default nodes
             material_tree.nodes.remove(node)
         #end for
-        the_material.diffuse_color = colour[0] # used in viewport
+        the_material.diffuse_color = colour[0] + (1,) # used in viewport
         group_node = material_tree.nodes.new("ShaderNodeGroup")
         group_node.node_tree = common_group
         group_node.location = (0, 0)
@@ -230,18 +226,18 @@ class LoadPalette(bpy.types.Operator) :
     # bl_options = set()
 
     # underscores not allowed in filename/filepath property attrib names!
-    # filename = bpy.props.StringProperty(subtype = "FILENAME")
-    filepath = bpy.props.StringProperty(subtype = "FILE_PATH")
-    scene_name = bpy.props.StringProperty(name = "New Scene Name", default = "Swatches")
-    base_object = bpy.props.EnumProperty \
+    # filename : bpy.props.StringProperty(subtype = "FILENAME")
+    filepath : bpy.props.StringProperty(subtype = "FILE_PATH")
+    scene_name : bpy.props.StringProperty(name = "New Scene Name", default = "Swatches")
+    base_object : bpy.props.EnumProperty \
       (
         items = list_objects,
         name = "Swatch Object",
         description = "Object to duplicate to create swatches",
         update = object_selected
       )
-    base_object_match = bpy.props.StringProperty(name = "Only Names Matching")
-    base_material = bpy.props.EnumProperty \
+    base_object_match : bpy.props.StringProperty(name = "Only Names Matching")
+    base_material : bpy.props.EnumProperty \
       (
         items = list_object_materials,
         name = "Swatch Material",
@@ -283,14 +279,24 @@ def add_invoke_item(self, context) :
       # doesn't work: its execute method gets run instead of invoke.
 #end add_invoke_item
 
+_classes_ = \
+    (
+        LoadPalette,
+        LoaderMenu,
+    )
+
 def register() :
-    bpy.utils.register_module(__name__)
-    bpy.types.INFO_MT_add.append(add_invoke_item)
+    for ċlass in _classes_ :
+        bpy.utils.register_class(ċlass)
+    #end for
+    bpy.types.VIEW3D_MT_add.append(add_invoke_item)
 #end register
 
 def unregister() :
-    bpy.types.INFO_MT_add.remove(add_invoke_item)
-    bpy.utils.unregister_module(__name__)
+    bpy.types.VIEW3D_MT_add.remove(add_invoke_item)
+    for ċlass in _classes_ :
+        bpy.utils.unregister_class(ċlass)
+    #end for
 #end unregister
 
 if __name__ == "__main__" :

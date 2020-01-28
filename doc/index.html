@@ -42,9 +42,9 @@ a
 </HEAD>
 <BODY STYLE="background-color : #F4F4F0">
 
-<DIV CLASS="h1">Gimp Palettes for Blender 0.3.1 User Guide<BR>
+<DIV CLASS="h1">Gimp Palettes for Blender 0.5.0 User Guide<BR>
 <A HREF="mailto:&quot;Lawrence D'Oliveiro&quot; &lt;ldo@geek-central.gen.nz&gt;">Lawrence D&#8217;Oliveiro</A><BR>
-2012 February 10</DIV>
+2020 January 28</DIV>
 <DIV STYLE="position : fixed; height : auto; width : 20%; top : 1em; right : 1em; left : auto; background-color : #E8E8E0">Table of Contents
 <OL>
 <LI><A HREF="#Introduction">Introduction</A>
@@ -53,7 +53,7 @@ a
 <LI><A HREF="#NewScene">What Happened To My Model?</A>
 <LI><A HREF="#UsingColours">Now That I Have Some Colours Loaded, How Do I Use Them?</A>
 <LI><A HREF="#Unneeded">Getting Rid Of Unneeded Stuff</A>
-<LI><A HREF="#AdvancedMaterials">Specular Versus Diffuse Materials, Mirror &amp; SSS</A>
+<LI><A HREF="#AdvancedMaterials">Customizing Material Creation</A>
 <LI><A HREF="#CustomSwatchObjects">Custom Swatch Objects</A>
 <LI><A HREF="#TooManyObjects">Too Many Objects?</A>
 </OL>
@@ -62,20 +62,20 @@ a
 <DIV STYLE="width : 78%">
 
 <DIV CLASS="h2"><A NAME="Introduction"></A>Introduction</DIV>
-<P>Gimp Palettes is an addon for <A HREF="http://www.blender.org/">Blender</A> 2.61 to
+<P>Gimp Palettes is an addon for <A HREF="http://www.blender.org/">Blender</A> 2.81 to
 allow easy use of colours from <A HREF="http://www.gimp.org/">Gimp</A> palette (.gpl) files.
 Material definitions in a 3D package like Blender are much more complex than a mere colour
 specification; nevertheless, this addon can be useful for making use of standardized colours
 for materials.
 
 <DIV CLASS="h2"><A NAME="Installation"></A>Installation</DIV>
-<P>To install Gimp Palettes for Blender, launch Blender 2.61,  bring up the
+<P>To install Gimp Palettes for Blender, launch Blender 2.81,  bring up the
 User Preferences window, select the Add-Ons tab, and click the &#8220;Install Add-Ons&#8221;
 button. In the file selector dialog that comes up find your way to the directory
 containing the <TT>gimp_palettes.py</TT> file, select it, and click the
 &#8220;Install Add-On...&#8221; button. This will take you back to Blender&#8217;s
 User Preferences window, where you should find that Gimp Palettes is now listed among
-the available add-ons, which you can enable for the current document by ticking its
+the available add-ons, which you can enable for the current session by ticking its
 checkbox.
 
 <DIV CLASS="h2"><A NAME="BasicUsage"></A>Usage&#8212;Basic</DIV>
@@ -86,7 +86,7 @@ additional &#8220;Load Palettes...&#8221; menu item appear in your Add menu
 <DIV CLASS="figure"><IMG SRC="AddLoadPalettes.png" ALT="Add menu with Load Palettes highlighted"></DIV>
 
 <P>Selecting this menu item will bring up a standard Blender file selector, with the following
-additional items at the lower left:
+additional items at the upper right:
 
 <DIV CLASS="figure"><IMG SRC="LoadPalettesDefault.png" ALT="File selector with custom items"></DIV>
 
@@ -103,7 +103,7 @@ each with its own material assigned, using one of the colours from the palette f
 
 <DIV CLASS="h2"><A NAME="NewScene"></A>What Happened To My Model?</DIV>
 <P>At this point, if you are new to Blender, you might be wondering what has happened to
-the rest of the contents of your .blend file. Not to worry: Gimp Palettes puts the objects
+the rest of the contents of your <TT>.blend</TT> file. Not to worry: Gimp Palettes puts the objects
 it creates into a new scene, in order to avoid cluttering up your existing work. If you
 look at the top of the Blender window, you&#8217;ll see that the scene name is now
 showing &#8220;Swatches&#8221; instead of the default &#8220;Scene&#8221; (or whatever
@@ -114,7 +114,7 @@ see all your original objects reappear.
 <P>At this point, you can examine the colour swatches, and even add lights and camera
 to see how they look in a full render.
 
-<P>Once you find a colour you like, select the swatch ((<SPAN CLASS="key">RMB</SPAN>) and
+<P>Once you find a colour you like, select the swatch (<SPAN CLASS="key">RMB</SPAN>) and
 look in the materials tab in the Properties window to see what the name is
 of the material with that colour. You can even change its name to something more memorable,
 if you want.
@@ -125,33 +125,27 @@ object.
 <DIV CLASS="h2"><A NAME="Unneeded"></A>Getting Rid Of Unneeded Stuff</DIV>
 <P>Once you&#8217;ve assigned all the colours you want, you can delete the scene containing
 the swatches, along with all the swatch objects in it. Then, when you save and reload
-the .blend file, all the unused materials will disappear.
+the <TT>.blend</TT> file, all the unused materials will disappear.
 
-<DIV CLASS="h2"><A NAME="AdvancedMaterials"></A>Specular Versus Diffuse Materials, Mirror &amp; SSS</DIV>
+<DIV CLASS="h2"><A NAME="AdvancedMaterials"></A>Customizing Material Creation</DIV>
 <P>The default settings above load the colours as purely diffuse materials. But what if
-you want more specular (reflective) ones?
-<P>This is where the additional checkboxes and sliders in the file selector dialog come in. If you
-look at this again, you will see checkboxes labelled &#8220;Use as Diffuse&#8221; (defaulting
-to true) and &#8221;Use as Specular&#8221; (defaulting to false), along with sliders labelled
-&#8220;Diffuse Intensity&#8221; and &#8220;Specular Intensity&#8221;, with the first defaulting
-to 0.8 and the second to 0.5. Simply check or uncheck the appropriate boxes and adjust the
-corresponding sliders to to the desired mix before selecting a palette file to import,
-and all the created materials will have the desired degrees of diffuse/specular intensity.
-
-<P>You can also use the palette to assign material colours for mirror (raytrace)
-and subsurface scattering. But these options are best applied with custom swatch objects
-(below).
+you want more shiny ones, or perhaps emissive ones, or ones with subsurface scattering
+(SSS) characteristics?
+<P>This is easy to change. Go into Blender&#8217;s Shader Editor, select one of the
+created materials, and you will see a node group called something like
+&#8220;palette material common&#8221;. If you open up this node group, you
+will see that it consists by default of a single diffuse shader. But it is easy
+enough to replace this with some other kind of shader or mixture of shaders, and your
+change will automatically affect all the created palette materials.
 
 <DIV CLASS="h2"><A NAME="CustomSwatchObjects"></A>Custom Swatch Objects</DIV>
 
 <P>If you don&#8217;t like the colours to be shown as simple plane objects, you can
 create more elaborate displays, by defining a custom swatch object. This must be a mesh,
 and it must have at least one material already assigned. The object will be replicated
-once for each colour, and the chosen material will also be duplicated, and its appropriate
-colours (depending on your checkbox selections) set to the one from the palette entry.
-The rest of the material settings will be preserved, so you can set these up beforehand,
-for example specifying your choice of shader models, transparency/mirror etc&#8212;all
-the settings that Blender offers.
+once for each colour, and the chosen material will be replaced with the one from the
+palette entry. So parts of the object to which that material was assigned will show
+the new generated material instead. Materials in other material slots will not be changed.
 
 <P>For example, here is a scaled cube mesh with two materials assigned, one called
 &#8220;Display&#8221; to the top face (to be replaced with the swatch colour)

@@ -1,5 +1,5 @@
 #+
-# This add-on script for Blender 2.7 loads a set of colours from a Gimp .gpl
+# This add-on script for Blender 2.8 loads a set of colours from a Gimp .gpl
 # file and creates a set of simple Cycles materials that use them, assigned to
 # swatch objects created in a separate scene in the current document. From there
 # they may be browsed and reused in other objects as needed.

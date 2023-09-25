@@ -1,7 +1,4 @@
-Gimp Palettes is an addon for Blender 2.8 <http://www.blender.org/> to
-allow easy use of colours from Gimp palette (.gpl) files.
-
-The user manual can be found, in HTML format, in the doc/ subdirectory.
-Start with doc/index.html.
-
-Lawrence D'Oliveiro <ldo@geek-central.gen.nz>
+This project is no longer being maintained on GitHub.
+Look for it at one of
+* gitlab: https://gitlab.com/ldo/gimp_palettes_for_blender
+* bitbucket: https://bitbucket.org/ldo17/gimp_palettes_for_blender
